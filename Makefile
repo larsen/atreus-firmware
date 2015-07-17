@@ -11,7 +11,7 @@ endif
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
-  USB ?= /dev/tty.usbmodem1411
+  USB ?= /dev/tty.usbmodemfa131
 else
   USB ?= /dev/ttyACM0
 endif
