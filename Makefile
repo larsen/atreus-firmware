@@ -4,10 +4,10 @@ F_CPU=16000000
 
 TARGET=atreus
 
+SWAPCOLUMNS=no
+# set to allow for flipping the PCB
+
 LAYOUT ?= qwerty
-ifneq ($(LAYOUT), qwerty)
-LAYOUT_DEPENDS=jsonlayout
-endif
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
@@ -52,7 +52,11 @@ $(TARGET).hex: $(TARGET)
 	avr-objcopy -O ihex -R .eeprom $(TARGET) $(TARGET).hex
 
 %.o: %.c
+ifeq ($(SWAPCOLUMNS),yes)
+	avr-gcc -std=gnu99 -DSWAPCOLUMNS=$(SWAPCOLUMNS) -Os -D F_CPU=$(F_CPU)UL -mmcu=$(MCU) -c -o $@ $<
+else
 	avr-gcc -std=gnu99 -Os -D F_CPU=$(F_CPU)UL -mmcu=$(MCU) -c -o $@ $<
+endif
 
 udev:
 	cp a-star.rules /etc/udev/rules.d/

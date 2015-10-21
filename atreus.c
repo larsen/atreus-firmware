@@ -9,7 +9,6 @@
 
 #define CPU_PRESCALE(n) (CLKPR = 0x80, CLKPR = (n))
 
-
 // Layout setup
 
 void reset(void);
@@ -17,7 +16,7 @@ void reset(void);
 // set this for layer changes that need to persist beyond one cycle
 int current_layer_number = 0;
 // this gets reset every cycle
-int *current_layer;
+unsigned int *current_layer;
 
 #define ROW_COUNT 4
 #define COL_COUNT 11
@@ -26,10 +25,22 @@ int *current_layer;
 volatile char * row_ports[ROW_COUNT] = {&PORTD, &PORTD, &PORTD, &PORTD};
 volatile char * row_dirs[ROW_COUNT] = {&DDRD, &DDRD, &DDRD, &DDRD};
 int row_pins[ROW_COUNT] = {0, 1, 3, 2};
+
+#ifdef SWAPCOLUMNS
+volatile char * col_ports[COL_COUNT] = {&PIND, &PINC, &PINB, &PINB, &PINE, \
+                                        &PIND,                          \
+                                        &PINB, &PINF, &PINF, &PIND, &PINB};
+#else
 volatile char * col_ports[COL_COUNT] = {&PINB, &PIND, &PINF, &PINF, &PINB, \
                                         &PIND,                          \
                                         &PINE, &PINB, &PINB, &PINC, &PIND};
+#endif
+
+#ifdef SWAPCOLUMNS
+int col_pins[COL_COUNT] = {7, 6, 5, 4, 6, 4, 6, 6, 7, 6, 7};
+#else
 int col_pins[COL_COUNT] = {7, 6, 7, 6, 6, 4, 6, 4, 5, 6, 7};
+#endif
 
 // b7 b6 f7 f6 b6
 // e6 b4 b5 c6 d7
@@ -125,7 +136,7 @@ void debounce(int passes_remaining) {
 
 void pre_invoke_functions() {
   for(int i = 0; i < pressed_count; i++) {
-    int keycode = current_layer[presses[i]];
+    unsigned int keycode = current_layer[presses[i]];
     if(keycode >= MIN_PRE_FUNCTION && keycode <= MAX_PRE_FUNCTION) {
       (layer_functions[keycode - MIN_PRE_FUNCTION])();
     }
@@ -136,7 +147,7 @@ void pre_invoke_functions() {
 void calculate_presses() {
   int usb_presses = 0;
   for(int i = 0; i < pressed_count; i++) {
-    int keycode = current_layer[presses[i]];
+    unsigned int keycode = current_layer[presses[i]];
     if(keycode >= MIN_FUNCTION && keycode <= MAX_FUNCTION) {
       // regular layout functions
       (layer_functions[keycode - MIN_FUNCTION])();
@@ -183,6 +194,14 @@ void init() {
   for (int r = 0; r < ROW_COUNT; r++) {
     *(row_dirs[r]) |= (char)(1 << row_pins[r]);
   }
+
+#ifdef SWAPCOLUMNS
+// This swaps middle two keys in case PCB was flipped (since those are on the same column)
+  layer0[27]^=layer0[38]^=layer0[27]^=layer0[38];
+  layer1[27]^=layer1[38]^=layer1[27]^=layer1[38];
+  layer2[27]^=layer2[38]^=layer2[27]^=layer2[38];
+#endif
+
   deactivate_rows();
   usb_init();
   while (!usb_configured()) /* wait */ ;

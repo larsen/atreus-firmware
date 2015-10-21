@@ -24,9 +24,12 @@ the USB device for uploading firmware.
 
 On Mac OS X with Homebrew:
 
-    $ brew tap larsimmisch/avr
+    $ brew tap osx-cross/avr
     $ brew install avr-libc
-    $ brew install avrdude
+    $ brew install avrdude --with-usb
+
+If you don't want to use Homebrew you can instead download
+[Crosspack for AVR](https://www.obdev.at/products/crosspack/index.html).
 
 Run `make upload` with the keyboard plugged in, and then activate the
 bootloader with reset (see below). Depending on your OS, it may expose
@@ -51,6 +54,42 @@ $ diff /tmp/dev-off /tmp/dev-on
 To use another C layout, copy it to `layout.h`; for example `cp
 multidvorak.h layout.h`. To use a JSON layout, run `make jsonlayout
 LAYOUT=softdvorak` and it will be written to `layout.h`.
+
+Usually you won't be able to upload the firmware from a virtualized
+OS; the virtualization interferes with the USB connection. However,
+you can compile the `.hex` file on a virtualized OS and take the hex
+file to a physical host and upload it with `avrdude` without
+installing the full compiler toolchain.
+
+## Windows
+
+Start by installing the A-Star drivers, as
+[documented by Pololu](https://www.pololu.com/docs/0J61/6.1). Once the
+driver is installed and the device is plugged in, you can determine
+the correct port setting by resetting the controller and looking at
+the "Ports (COM & LPT)"
+[section of the Windows Device Manager](https://a.pololu-files.com/picture/0J5272.500.png);
+it should show up as "Pololu A-Star Micro 32U4" if you check within 8
+seconds of initiating a reset.
+
+You can install the whole development toolchain using
+[WinAVR](http://winavr.sourceforge.net/) to compile using `make upload
+[...]` with the instructions above.
+
+However, if the whole compiler setup is too complicated, it's also
+possible to download a
+[precompiled firmware](http://atreus.technomancy.us/atreus-qwerty.hex)
+containing the default layout and uploading it with the simpler
+[AVRDUDESS](http://blog.zakkemble.co.uk/avrdudess-a-gui-for-avrdude/).
+
+These are the steps to using AVRDUDESS:
+
+* pick "avr109" as the programmer
+* select "ATmega32u4" from the MCU section in the upper left
+* select the port in the upper left as found in the device manager
+* choose the .hex file you downloaded in the "flash" section
+* reset the microcontroller so that the LED is gently pulsing
+* press "go" under "flash"
 
 ## Reset
 
@@ -97,6 +136,11 @@ Inputs:
     |---------------+----+----+----+----+----+----+----+----+----+----+----|
     | pin number    | B7 | B6 | F7 | F6 | B6 | D4 | E6 | B4 | B5 | C6 | D7 |
     |---------------+----+----+----+----+----+----+----+----+----+----+----|
+
+If you soldered the PCB in upside down, never fear! This can be fixed
+in the firmware without removing the switches and resoldering. Simply
+run `make SWAPCOLUMNS=yes USB=...` to use a reversed pinout
+configuration.
 
 ## Layouts in C
 
